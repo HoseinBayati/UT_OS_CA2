@@ -2,47 +2,22 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include "util.hpp"
 
 using namespace std;
 
-vector<string> split_string(const char *buffer, 
-                            char delim)
-{
-    vector<string> vec;
-    string s(buffer), temp;
-    stringstream ss;
-    ss << s;
-    while (std::getline(ss, temp, delim))
-    {
-        vec.push_back(temp);
-    }
-    return vec;
-}
 
-vector<string> get_resources()
-{
-    string s;
-    cout << "Enter resources to get stats :" << endl;
-    std::getline(cin, s);
-    return split_string(s.c_str(), ' ');
-}
-
-string get_building_name()
+void masterproc(
+    vector<string> resources,
+    string biulding_name,
+    vector<string> sub_dirs,
+    string buildings_folder)
 {
 
-}
 
-vector<string> list_sub_dir(string path)
-{
 
-}
-
-void masterproc(vector<string> bureaus,
-                string biulding_name,
-                vector<string> sub_dirs,
-                string buildings_folder)
-{
-    
 }
 
 int main(int argc, char *argv[])
@@ -50,17 +25,32 @@ int main(int argc, char *argv[])
 
     if (argc != 2)
     {
-        cerr << "your command should be fomatted like:\n ./main <resource> <resource> ..." << endl;
+        cerr << "your command should be fomatted like:\n ./main <buildings_directory>" << endl;
         return 0;
     }
 
     string buildings_folder = string(argv[1]);
 
+    vector<string> input_resources = get_resources();
+    string building_name = get_building_name();
+    vector<string> sub_dirs = list_sub_dir(buildings_folder);
+
+    for (auto &resource : input_resources)
+    {
+        cout << resource << endl;
+    }
+    cout << building_name << endl;
+    for (auto &sub_dir : sub_dirs)
+    {
+        cout << sub_dir << endl;
+    }
+
     masterproc(
-        get_resources(),
-        get_building_name(),
-        list_sub_dir(buildings_folder),
+        input_resources,
+        building_name,
+        sub_dirs,
         buildings_folder);
+
 
     return 1;
 }
