@@ -48,6 +48,10 @@
         "sstream": "cpp",
         "fstream": "cpp",
         "cstring": "cpp",
-        "ctime": "cpp"
+        "ctime": "cpp",
+        "strstream": "cpp",
+        "complex": "cpp",
+        "iomanip": "cpp",
+        "cfenv": "cpp"
     }
 }

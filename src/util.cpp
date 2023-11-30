@@ -4,7 +4,8 @@
 #include <sstream>
 #include <sys/stat.h>
 #include <sys/wait.h>
-#include "util.hpp"
+#include "../include/util.hpp"
+#include "../include/constants.hpp"
 
 using namespace std;
 
@@ -31,13 +32,12 @@ vector<string> get_resources()
     return split_string(resources.c_str(), ' ');
 }
 
-string get_building_name()
+vector<string> get_building_name()
 {
-    cout << "Enter The Building Name:" << endl;
-
-    string building_name;
-    cin >> building_name;
-    return building_name;
+    string buildings;
+    cout << "Enter Buildings:" << endl;
+    std::getline(cin, buildings);
+    return split_string(buildings.c_str(), ' ');
 }
 
 vector<string> list_sub_dir(string path)
