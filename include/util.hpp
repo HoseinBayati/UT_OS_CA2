@@ -8,7 +8,7 @@ using namespace std;
 
 vector<string> split_string(const char *, char);
 vector<string> get_resources();
-vector<string> get_building_name();
-vector<string> list_sub_dir(string path);
+vector<string> get_building_names(string);
+vector<string> list_sub_dir(string);
 
 #endif

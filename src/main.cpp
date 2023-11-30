@@ -10,14 +10,26 @@
 
 using namespace std;
 
+void compose_message_to_building(vector<string> target_resources)
+{
+    string message_to_building;
+
+    for (auto &resource : target_resources)
+    {
+        message_to_building += resource;
+        message_to_building += " ";
+    }
+}
+
 void exec_building(
     int pipefd_parent_to_building[2],
     int pipefd_building_to_parent[2],
+    string buildings_dir,
     string building_name)
 {
     string building_msg = building_name;
     char buffer[50];
-    
+
     close(pipefd_parent_to_building[1]);
     close(pipefd_building_to_parent[0]);
 
@@ -26,7 +38,7 @@ void exec_building(
         "./bin/out/building.out",
         to_string(pipefd_building_to_parent[1]).c_str(), // write-to-parent end
         to_string(pipefd_parent_to_building[0]).c_str(), // read-from-parent end
-        building_name.c_str(),
+        (buildings_dir + "/" + building_name + "/").c_str(), // path to building
         NULL);
 
     close(pipefd_parent_to_building[0]);
@@ -36,8 +48,7 @@ void exec_building(
 void masterproc(
     vector<string> target_resources,
     vector<string> target_buildings,
-    vector<string> sub_dirs,
-    string buildings_folder)
+    string buildings_dir)
 {
     int i = 0;
     for (string target_building : target_buildings)
@@ -45,9 +56,6 @@ void masterproc(
         int pipefd_parent_to_building[2];
         int pipefd_building_to_parent[2];
         pid_t pid;
-        string parent_msg = to_string(i);
-        string building_msg = target_building;
-        char buffer[50];
 
         if (pipe(pipefd_parent_to_building) == -1 || pipe(pipefd_building_to_parent) == -1)
         {
@@ -69,6 +77,7 @@ void masterproc(
             exec_building(
                 pipefd_parent_to_building,
                 pipefd_building_to_parent,
+                buildings_dir,
                 target_building);
 
             break;
@@ -79,10 +88,25 @@ void masterproc(
             close(pipefd_parent_to_building[0]);
             close(pipefd_building_to_parent[1]);
 
-            // Write to building and read from building
-            write(pipefd_parent_to_building[1], parent_msg.c_str(), sizeof(parent_msg));
+            string message_to_building;
 
-            read(pipefd_building_to_parent[0], buffer, sizeof(buffer));
+            for (auto &resource : target_resources)
+            {
+                message_to_building += resource;
+                message_to_building += " ";
+            }
+
+            write(
+                pipefd_parent_to_building[1],
+                message_to_building.c_str(),
+                sizeof(message_to_building));
+
+            char buffer[50];
+            read(
+                pipefd_building_to_parent[0],
+                buffer,
+                sizeof(buffer));
+
             cout << "Parent received: " << buffer << endl;
 
             close(pipefd_parent_to_building[1]);
@@ -101,17 +125,15 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    string buildings_folder = string(argv[1]);
+    string buildings_dir = string(argv[1]);
 
     vector<string> target_resources = get_resources();
-    vector<string> target_buildings = get_building_name();
-    vector<string> sub_dirs = list_sub_dir(buildings_folder);
+    vector<string> target_buildings = get_building_names(buildings_dir);
 
     masterproc(
         target_resources,
         target_buildings,
-        sub_dirs,
-        buildings_folder);
+        buildings_dir);
 
     return 1;
 }
