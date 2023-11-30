@@ -7,6 +7,95 @@
 
 using namespace std;
 
+void calc_sum_for_each_month(
+    int (&consumption_info)[MONTHS_COUNT][DAYS_COUNT][HOURS_COUNT],
+    int (&result)[MONTHS_COUNT])
+{
+    for (int i = 0; i < MONTHS_COUNT; i++)
+    {
+        result[i] = 0;
+    }
+
+    for (int i = 0; i < MONTHS_COUNT; i++)
+    {
+        for (int j = 0; j < DAYS_COUNT; j++)
+        {
+            for (int k = 0; k < HOURS_COUNT; k++)
+            {
+                result[i] += consumption_info[i][j][k];
+            }
+        }
+    }
+}
+
+int calc_mean_in_month(int sum_for_each_month[MONTHS_COUNT])
+{
+    int year_sum = 0;
+
+    for (int i = 0; i < MONTHS_COUNT; i++)
+    {
+        year_sum += sum_for_each_month[i];
+    }
+
+    int mean = year_sum / MONTHS_COUNT;
+
+    return mean;
+}
+
+void calc_peak_in_each_month(
+    int (&consumption_info)[MONTHS_COUNT][DAYS_COUNT][HOURS_COUNT],
+    int (&peak_hours)[MONTHS_COUNT])
+{
+    for (int i = 0; i < MONTHS_COUNT; i++)
+    {
+        int max_consumption = 0;
+        for (int k = 0; k < HOURS_COUNT; k++)
+        {
+            int this_hour_consumption = 0;
+            for (int j = 0; j < DAYS_COUNT; j++)
+            {
+                this_hour_consumption += consumption_info[i][j][k];
+            }
+            if (this_hour_consumption > max_consumption)
+            {
+                max_consumption = this_hour_consumption;
+                peak_hours[i] = k;
+            }
+        }
+    }
+}
+
+void calc_bill_for_each_month(
+    int (&consumption_info)[MONTHS_COUNT][DAYS_COUNT][HOURS_COUNT],
+    int (&result)[MONTHS_COUNT])
+{
+}
+
+int calc_mean_peak_difference(
+    int (&consumption_info)[MONTHS_COUNT][DAYS_COUNT][HOURS_COUNT],
+    int (&peak_hours)[MONTHS_COUNT],
+    int (&sum_for_each_month)[MONTHS_COUNT])
+{
+    int total_year_sum = 0;
+    int peak_consumption_year_sum = 0;
+    for (int i = 0; i < MONTHS_COUNT; i++)
+    {
+        int peak_consumption_month_sum = 0;
+        for (int j = 0; j < DAYS_COUNT; j++)
+        {
+            peak_consumption_month_sum += consumption_info[i][j][peak_hours[i]];
+        }
+        peak_consumption_year_sum += peak_consumption_month_sum;
+    }
+
+    for (int i = 0; i < MONTHS_COUNT; i++)
+    {
+        total_year_sum += sum_for_each_month[i];
+    }
+
+    return ((peak_consumption_year_sum * HOURS_COUNT) - total_year_sum) / (MONTHS_COUNT * DAYS_COUNT * HOURS_COUNT);
+}
+
 void read_file(
     string file_dir,
     int (&consumption_info)[MONTHS_COUNT][DAYS_COUNT][HOURS_COUNT])
@@ -16,12 +105,12 @@ void read_file(
     vector<string> words;
     int hour_0_column = 3;
 
-    cout << "read from: " << file_dir << endl;
+    // cout << "read from: " << file_dir << endl;
 
     fin.open(file_dir, ios::in);
     if (!fin.is_open())
     {
-        cout << "file not open" << endl;
+        cout << "!! couldn't open the file (invalid building name)" << endl;
         return;
     }
 
@@ -38,66 +127,117 @@ void read_file(
             }
         }
     }
+
+    fin.close();
+}
+
+void show_resource_info(string resource_name, int (&consumption_info)[MONTHS_COUNT][DAYS_COUNT][HOURS_COUNT])
+{
+    int sum_for_each_month[MONTHS_COUNT];
+    int peak_hours[MONTHS_COUNT];
+    int bill_for_each_month[MONTHS_COUNT];
+    int mean_in_month;
+    int peak_mean_difference;
+
+    calc_sum_for_each_month(
+        consumption_info,
+        sum_for_each_month);
+
+    mean_in_month = calc_mean_in_month(sum_for_each_month);
+
+    calc_peak_in_each_month(
+        consumption_info,
+        peak_hours);
+
+    calc_bill_for_each_month(
+        consumption_info,
+        bill_for_each_month);
+
+    peak_mean_difference = calc_mean_peak_difference(
+        consumption_info,
+        peak_hours,
+        sum_for_each_month);
+
+    cout << "Resource:  " << resource_name << endl
+         << "Total consumption for each month: ";
+    for (int i = 0; i < MONTHS_COUNT; i++)
+    {
+        cout << sum_for_each_month[i] << " ";
+    }
+    // cout << endl
+    //      << "bill_for_each_month: ";
+    // for (int i = 0; i < MONTHS_COUNT; i++)
+    // {
+    //     cout << bill_for_each_month[i] << " ";
+    // }
+    // cout << endl;
+    cout << endl
+         << "Mean consumption in month: " << mean_in_month;
+
+    cout << endl
+         << "Peak hour in each month: ";
+    for (int i = 0; i < MONTHS_COUNT; i++)
+    {
+        cout << peak_hours[i] << " ";
+    }
+    cout << endl
+         << "The difference between a peak hour and mean: " << peak_mean_difference << endl
+         << "--------------------------------------" << endl;
 }
 
 int main(int argc, char *argv[])
 {
-    if (argc != 4)
+    if (argc != 5)
     {
-        perror("didn't receive the port fd's\n");
+        perror("!! didn't receive the port fd's\n");
         exit(EXIT_FAILURE);
     }
 
     int write_fd = atoi(argv[1]);
     int read_fd = atoi(argv[2]);
     string building_dir = argv[3];
+    string building_name = argv[4];
 
     char buffer[50];
     read(read_fd, buffer, sizeof(buffer));
 
     vector<string> target_resources = split_string(buffer, ' ');
 
-    cout << "Building received: " << building_dir << endl;
+    // cout << "Building received: " << building_dir << endl;
 
     int g_consumption[MONTHS_COUNT][DAYS_COUNT][HOURS_COUNT];
     int w_consumption[MONTHS_COUNT][DAYS_COUNT][HOURS_COUNT];
     int e_consumption[MONTHS_COUNT][DAYS_COUNT][HOURS_COUNT];
 
+    cout << endl
+         << "==============================================" << endl
+         << "Information for building: " << building_name << endl;
     for (auto &resource_key : target_resources)
     {
         if (resource_key == "G")
         {
+
             string file_dir = building_dir + GAS_FILE;
             read_file(file_dir, g_consumption);
+            show_resource_info(GAS, g_consumption);
         }
         else if (resource_key == "W")
         {
             string file_dir = building_dir + WATER_FILE;
             read_file(file_dir, w_consumption);
+            show_resource_info(WATER, w_consumption);
         }
         else if (resource_key == "E")
         {
             string file_dir = building_dir + ELECTRICITY_FILE;
             read_file(file_dir, e_consumption);
+            show_resource_info(ELECTRICITY, e_consumption);
         }
         else
         {
-            cout << "invalid resource key" << endl;
+            cerr << "!! invalid resource key" << endl;
         }
     }
-
-    // for (int i = 0; i < MONTHS_COUNT; i++)
-    // {
-    //     for (int j = 0; j < DAYS_COUNT; j++)
-    //     {
-    //         for (int k = 0; k < HOURS_COUNT; k++)
-    //         {
-    //             cout << e_consumption[i][j][k] << ",";
-    //         }
-    //         cout << endl;
-    //     }
-    // }
-    
 
     write(
         write_fd,

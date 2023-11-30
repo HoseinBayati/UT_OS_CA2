@@ -41,6 +41,7 @@ void exec_building(
         to_string(pipefd_building_to_parent[1]).c_str(),     // write-to-parent end
         to_string(pipefd_parent_to_building[0]).c_str(),     // read-from-parent end
         (buildings_dir + "/" + building_name + "/").c_str(), // path to building
+        building_name.c_str(),                               // building name
         NULL);
 
     close(pipefd_parent_to_building[0]);
