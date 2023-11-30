@@ -22,8 +22,8 @@ void exec_building(
     close(pipefd_building_to_parent[0]);
 
     execlp(
-        "./building.out",
-        "./building.out",
+        "./bin/out/building.out",
+        "./bin/out/building.out",
         to_string(pipefd_building_to_parent[1]).c_str(), // write-to-parent end
         to_string(pipefd_parent_to_building[0]).c_str(), // read-from-parent end
         building_name.c_str(),
