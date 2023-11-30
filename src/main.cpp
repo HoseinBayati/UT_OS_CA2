@@ -10,15 +10,17 @@
 
 using namespace std;
 
-void compose_message_to_building(vector<string> target_resources)
+string compose_message_to_building(vector<string> target_resources)
 {
     string message_to_building;
 
-    for (auto &resource : target_resources)
+    for (int i = 0; i < target_resources.size(); i++)
     {
-        message_to_building += resource;
-        message_to_building += " ";
+        message_to_building += target_resources[i];
+        message_to_building = (i == target_resources.size() - 1) ? message_to_building : message_to_building + " ";
     }
+
+    return message_to_building;
 }
 
 void exec_building(
@@ -36,8 +38,8 @@ void exec_building(
     execlp(
         "./bin/out/building.out",
         "./bin/out/building.out",
-        to_string(pipefd_building_to_parent[1]).c_str(), // write-to-parent end
-        to_string(pipefd_parent_to_building[0]).c_str(), // read-from-parent end
+        to_string(pipefd_building_to_parent[1]).c_str(),     // write-to-parent end
+        to_string(pipefd_parent_to_building[0]).c_str(),     // read-from-parent end
         (buildings_dir + "/" + building_name + "/").c_str(), // path to building
         NULL);
 
@@ -88,13 +90,7 @@ void masterproc(
             close(pipefd_parent_to_building[0]);
             close(pipefd_building_to_parent[1]);
 
-            string message_to_building;
-
-            for (auto &resource : target_resources)
-            {
-                message_to_building += resource;
-                message_to_building += " ";
-            }
+            string message_to_building = compose_message_to_building(target_resources);
 
             write(
                 pipefd_parent_to_building[1],

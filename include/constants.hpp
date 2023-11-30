@@ -12,6 +12,11 @@ const std::string RESOURCES[3] = {"Gas", "Water", "Electricity"};
 const char RESOURCE_SIGNS[3] = {'G', 'W', 'E'};
 constexpr int RESOURCES_COUNT = 3;
 
+const std::string GAS_FILE = "Gas.csv";
+const std::string WATER_FILE = "Water.csv";
+const std::string ELECTRICITY_FILE = "Electricity.csv";
+
+
 constexpr int MONTHS_COUNT = 12;
 constexpr int HOURS_COUNT = 6;
 constexpr int DAYS_COUNT = 30;
