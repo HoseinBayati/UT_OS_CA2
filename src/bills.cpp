@@ -8,6 +8,11 @@
 
 using namespace std;
 
+char *read_bills_file(char *buffer)
+{
+    return buffer;
+}
+
 int main(int argc, char *argv[])
 {
     if (argc != 2)
@@ -18,48 +23,48 @@ int main(int argc, char *argv[])
 
     cout << "BILLS PROGRAM RUNNING" << endl;
 
-    int pipe = open(BILLS_PIPE, O_RDONLY);
-    if (pipe == -1)
+    for (int i = 0; i < 9; i++)
     {
-        std::cerr << "Failed to open named pipe for reading requests" << std::endl;
-        return 1;
-    }
-
-    // while (true)
-    // {
-    // Read the request
-    char buffer[256];
-    int bytesRead = read(pipe, buffer, sizeof(buffer));
-
-    if (bytesRead > 0)
-    {
-        std::cout << "Request received: " << buffer << std::endl;
-
-        // Process the request and prepare the response
-        std::string responseData = "Here is the information you requested";
-
-        // Close the reading end of the pipe
-        close(pipe);
-
-        // Open the named pipe for writing the response
-        pipe = open(BILLS_PIPE, O_WRONLY);
+        int pipe = open(BILLS_PIPE, O_RDONLY);
         if (pipe == -1)
         {
-            std::cerr << "Failed to open named pipe for writing response" << std::endl;
+            std::cerr << "Failed to open named pipe for reading requests" << std::endl;
             return 1;
         }
 
-        // Write the response to the named pipe
-        write(pipe, responseData.c_str(), strlen(responseData.c_str()));
+        char buffer[BUFFER_CAPACITY];
+        memset(buffer, 0, BUFFER_CAPACITY);
+        int bytesRead = 0;
 
-        // Close the pipe
-        close(pipe);
+        bytesRead = read(pipe, buffer, sizeof(buffer));
+
+        if (bytesRead > 0)
+        {
+            std::cout << "Request received: " << buffer << std::endl;
+
+            std::string responseData = "Here is the information you requested";
+
+            close(pipe);
+
+            pipe = open(BILLS_PIPE, O_WRONLY);
+            if (pipe == -1)
+            {
+                std::cerr << "Failed to open named pipe for writing response" << std::endl;
+                return 1;
+            }
+
+            char *response = read_bills_file(buffer);
+            write(pipe, response, sizeof(response));
+
+            close(pipe);
+        }
+        else
+        {
+            usleep(1000);
+        }
     }
-    else
-    {
-        std::cerr << "Failed to read request from named pipe" << std::endl;
-    }
-    // }
+
+    cout << "=====  out of bills while  =====" << endl;
 
     return 0;
 }

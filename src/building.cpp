@@ -12,6 +12,7 @@ using namespace std;
 void print_building_header(string building_name)
 {
     cout << endl
+         << endl
          << "==============================================" << endl
          << "Information for building: " << building_name << endl;
 }
@@ -76,8 +77,10 @@ void calc_peak_in_each_month(
 
 void calc_bill_for_each_month(
     int (&consumption_info)[MONTHS_COUNT][DAYS_COUNT][HOURS_COUNT],
-    int (&result)[MONTHS_COUNT])
+    int (&result)[MONTHS_COUNT],
+    string resource_name)
 {
+    // cout << "=====  calc bill function  =====" << endl;
     int pipe = open(BILLS_PIPE, O_WRONLY);
     if (pipe == -1)
     {
@@ -85,16 +88,10 @@ void calc_bill_for_each_month(
         return;
     }
 
-    // Message to send (request)
-    std::string requestMessage = "Requesting information";
-
-    // Write the request to the named pipe
-    write(pipe, requestMessage.c_str(), sizeof(requestMessage.c_str()));
-
-    // Close the pipe
+    char requestMessage[] = "Requesting information";
+    write(pipe, resource_name.c_str(), sizeof(resource_name.c_str()));
     close(pipe);
 
-    // Open the named pipe for reading the response
     pipe = open(BILLS_PIPE, O_RDONLY);
     if (pipe == -1)
     {
@@ -102,8 +99,7 @@ void calc_bill_for_each_month(
         return;
     }
 
-    // Read the response
-    char buffer[256];
+    char buffer[BUFFER_CAPACITY];
     int bytesRead = read(pipe, buffer, sizeof(buffer));
 
     if (bytesRead > 0)
@@ -115,10 +111,7 @@ void calc_bill_for_each_month(
         std::cerr << "Failed to read response from named pipe" << std::endl;
     }
 
-    // Close the pipe
     close(pipe);
-
-    return;
 }
 
 int calc_mean_peak_difference(
@@ -214,7 +207,7 @@ void print_building_results(
          << "--------------------------------------" << endl;
 }
 
-void show_resource_info(string resource_name, int (&consumption_info)[MONTHS_COUNT][DAYS_COUNT][HOURS_COUNT])
+void show_resource_info(string resource_name, int (&consumption_info)[MONTHS_COUNT][DAYS_COUNT][HOURS_COUNT], string building_name)
 {
     int sum_for_each_month[MONTHS_COUNT];
     int peak_hours[MONTHS_COUNT];
@@ -234,20 +227,21 @@ void show_resource_info(string resource_name, int (&consumption_info)[MONTHS_COU
 
     calc_bill_for_each_month(
         consumption_info,
-        bill_for_each_month);
+        bill_for_each_month,
+        resource_name);
 
     peak_mean_difference = calc_mean_peak_difference(
         consumption_info,
         peak_hours,
         sum_for_each_month);
 
-    print_building_results(
-        resource_name,
-        sum_for_each_month,
-        peak_hours,
-        bill_for_each_month,
-        mean_in_month,
-        peak_mean_difference);
+    // print_building_results(
+    //     resource_name,
+    //     sum_for_each_month,
+    //     peak_hours,
+    //     bill_for_each_month,
+    //     mean_in_month,
+    //     peak_mean_difference);
 }
 
 int main(int argc, char *argv[])
@@ -271,27 +265,29 @@ int main(int argc, char *argv[])
     int g_consumption[MONTHS_COUNT][DAYS_COUNT][HOURS_COUNT];
     int w_consumption[MONTHS_COUNT][DAYS_COUNT][HOURS_COUNT];
     int e_consumption[MONTHS_COUNT][DAYS_COUNT][HOURS_COUNT];
-    print_building_header(building_name);
+
+    // print_building_header(building_name);
+
     for (auto &resource_key : target_resources)
     {
-        if (resource_key == "G")
+        if (resource_key == GAS_CODE)
         {
 
             string file_dir = building_dir + GAS_FILE;
             read_file(file_dir, g_consumption);
-            show_resource_info(GAS, g_consumption);
+            show_resource_info(GAS, g_consumption, building_name);
         }
-        else if (resource_key == "W")
+        else if (resource_key == WATER_CODE)
         {
             string file_dir = building_dir + WATER_FILE;
             read_file(file_dir, w_consumption);
-            show_resource_info(WATER, w_consumption);
+            show_resource_info(WATER, w_consumption, building_name);
         }
-        else if (resource_key == "E")
+        else if (resource_key == ELECTRICITY_CODE)
         {
             string file_dir = building_dir + ELECTRICITY_FILE;
             read_file(file_dir, e_consumption);
-            show_resource_info(ELECTRICITY, e_consumption);
+            show_resource_info(ELECTRICITY, e_consumption, building_name);
         }
         else
         {

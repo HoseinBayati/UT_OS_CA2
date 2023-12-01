@@ -96,6 +96,7 @@ void handle_buildings_procs(
                 sizeof(message_to_building));
 
             char buffer[50];
+            waitpid(building_pid, NULL, 0); ////////////////////
             read(
                 pipefd_building_to_parent[0],
                 buffer,
@@ -145,9 +146,10 @@ void masterproc(
             target_resources,
             target_buildings,
             buildings_dir);
+        waitpid(bills_pid, NULL, 0); ////////////////////
     }
 
-    unlink(BILLS_PIPE);
+    unlink(BILLS_PIPE); ////////////////////
 }
 
 int main(int argc, char *argv[])

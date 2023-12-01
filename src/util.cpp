@@ -61,8 +61,8 @@ vector<string> list_sub_dir(string path)
         else if (grep_pid > 0)
         {
             close(grep_pipe_fd[1]);
-            char buffer[MAX_LEN] = {0};
-            read(grep_pipe_fd[0], buffer, MAX_LEN);
+            char buffer[BUFFER_CAPACITY] = {0};
+            read(grep_pipe_fd[0], buffer, BUFFER_CAPACITY);
             return split_string(buffer, '\n');
         }
     }
