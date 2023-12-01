@@ -13,7 +13,7 @@ void print_building_header(string building_name)
 {
     cout << endl
          << endl
-         << "==============================================" << endl
+         << "=======================================" << endl
          << "Information for building: " << building_name << endl;
 }
 
@@ -78,40 +78,42 @@ void calc_peak_in_each_month(
 void calc_bill_for_each_month(
     int (&consumption_info)[MONTHS_COUNT][DAYS_COUNT][HOURS_COUNT],
     int (&result)[MONTHS_COUNT],
-    string resource_name)
+    const char *resource_code)
 {
     // cout << "=====  calc bill function  =====" << endl;
-    int pipe = open(BILLS_PIPE, O_WRONLY);
-    if (pipe == -1)
-    {
-        std::cerr << "Failed to open named pipe for writing" << std::endl;
-        return;
-    }
+    // int pipe = open(BILLS_PIPE, O_WRONLY);
+    // if (pipe == -1)
+    // {
+    //     cerr << "Failed to open named pipe for writing" << endl;
+    //     return;
+    // }
 
-    char requestMessage[] = "Requesting information";
-    write(pipe, resource_name.c_str(), sizeof(resource_name.c_str()));
-    close(pipe);
+    // char requestMessage[] = "Requesting information";
+    // write(pipe, resource_code, sizeof(resource_code));
+    // close(pipe);
 
-    pipe = open(BILLS_PIPE, O_RDONLY);
-    if (pipe == -1)
-    {
-        std::cerr << "Failed to open named pipe for reading response" << std::endl;
-        return;
-    }
+    // pipe = open(BILLS_PIPE, O_RDONLY);
+    // if (pipe == -1)
+    // {
+    //     cerr << "Failed to open named pipe for reading response" << endl;
+    //     return;
+    // }
 
-    char buffer[BUFFER_CAPACITY];
-    int bytesRead = read(pipe, buffer, sizeof(buffer));
+    // usleep(PIPE_WAIT_TIME);
 
-    if (bytesRead > 0)
-    {
-        std::cout << "Response received: " << buffer << std::endl;
-    }
-    else
-    {
-        std::cerr << "Failed to read response from named pipe" << std::endl;
-    }
+    // char buffer[BUFFER_CAPACITY];
+    // int bytesRead = read(pipe, buffer, sizeof(buffer));
 
-    close(pipe);
+    // if (bytesRead > 0)
+    // {
+    //     cout << "Response received: " << buffer << endl;
+    // }
+    // else
+    // {
+    //     cerr << "Failed to read response from named pipe" << endl;
+    // }
+
+    // close(pipe);
 }
 
 int calc_mean_peak_difference(
@@ -204,10 +206,10 @@ void print_building_results(
     }
     cout << endl
          << "The difference between a peak hour and mean: " << peak_mean_difference << endl
-         << "--------------------------------------" << endl;
+         << "---------------------------------------" << endl;
 }
 
-void show_resource_info(string resource_name, int (&consumption_info)[MONTHS_COUNT][DAYS_COUNT][HOURS_COUNT], string building_name)
+void show_resource_info(int (&consumption_info)[MONTHS_COUNT][DAYS_COUNT][HOURS_COUNT], string resource_code)
 {
     int sum_for_each_month[MONTHS_COUNT];
     int peak_hours[MONTHS_COUNT];
@@ -228,20 +230,66 @@ void show_resource_info(string resource_name, int (&consumption_info)[MONTHS_COU
     calc_bill_for_each_month(
         consumption_info,
         bill_for_each_month,
-        resource_name);
+        resource_code.c_str());
 
     peak_mean_difference = calc_mean_peak_difference(
         consumption_info,
         peak_hours,
         sum_for_each_month);
 
-    // print_building_results(
-    //     resource_name,
-    //     sum_for_each_month,
-    //     peak_hours,
-    //     bill_for_each_month,
-    //     mean_in_month,
-    //     peak_mean_difference);
+    print_building_results(
+        resource_code,
+        sum_for_each_month,
+        peak_hours,
+        bill_for_each_month,
+        mean_in_month,
+        peak_mean_difference);
+}
+
+void get_prices_from_bills_proc(
+    int (&prices)[MONTHS_COUNT][RESOURCES_COUNT])
+{
+    int pipe = open(BILLS_PIPE, O_WRONLY);
+    if (pipe == -1)
+    {
+        cerr << "Failed to open named pipe for writing" << endl;
+        return;
+    }
+
+    char requestMessage[] = "Get Resource Prices";
+    write(pipe, requestMessage, sizeof(requestMessage));
+    close(pipe);
+
+    pipe = open(BILLS_PIPE, O_RDONLY);
+    if (pipe == -1)
+    {
+        cerr << "Failed to open named pipe for reading response" << endl;
+        return;
+    }
+
+    usleep(PIPE_WAIT_TIME);
+
+    char buffer[BUFFER_CAPACITY];
+    int bytesRead = read(pipe, buffer, sizeof(buffer));
+
+    if (bytesRead > 0)
+    {
+        vector<string> prices_list = split_string(buffer, ',');
+
+        cout << "Response received: ";
+        for (auto &price : prices_list)
+        {
+            cout << price << "    ";
+        }
+        cout << endl
+             << endl;
+    }
+    else
+    {
+        cerr << "Failed to read response from named pipe" << endl;
+    }
+
+    close(pipe);
 }
 
 int main(int argc, char *argv[])
@@ -266,7 +314,11 @@ int main(int argc, char *argv[])
     int w_consumption[MONTHS_COUNT][DAYS_COUNT][HOURS_COUNT];
     int e_consumption[MONTHS_COUNT][DAYS_COUNT][HOURS_COUNT];
 
-    // print_building_header(building_name);
+    print_building_header(building_name);
+
+    int prices[MONTHS_COUNT][RESOURCES_COUNT];
+
+    get_prices_from_bills_proc(prices);
 
     for (auto &resource_key : target_resources)
     {
@@ -275,19 +327,19 @@ int main(int argc, char *argv[])
 
             string file_dir = building_dir + GAS_FILE;
             read_file(file_dir, g_consumption);
-            show_resource_info(GAS, g_consumption, building_name);
+            show_resource_info(g_consumption, GAS_CODE);
         }
         else if (resource_key == WATER_CODE)
         {
             string file_dir = building_dir + WATER_FILE;
             read_file(file_dir, w_consumption);
-            show_resource_info(WATER, w_consumption, building_name);
+            show_resource_info(w_consumption, WATER_CODE);
         }
         else if (resource_key == ELECTRICITY_CODE)
         {
             string file_dir = building_dir + ELECTRICITY_FILE;
             read_file(file_dir, e_consumption);
-            show_resource_info(ELECTRICITY, e_consumption, building_name);
+            show_resource_info(e_consumption, ELECTRICITY_CODE);
         }
         else
         {

@@ -102,7 +102,11 @@ void handle_buildings_procs(
                 buffer,
                 sizeof(buffer));
 
-            cout << "Parent received: " << buffer << endl;
+            cout << endl
+                 << "*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*" << endl
+                 << "Parent received: " << buffer << endl
+                 << "*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*" << endl
+                 << endl;
 
             close(pipefd_parent_to_building[1]);
             close(pipefd_building_to_parent[0]);
@@ -137,7 +141,7 @@ void masterproc(
         execlp(
             "./bin/out/bills.out",
             "./bin/out/bills.out",
-            (buildings_dir + "/").c_str(), // path to buildings directory
+            (buildings_dir + "/" + BILLS_FILE).c_str(), // path to buildings directory
             NULL);
     }
     else

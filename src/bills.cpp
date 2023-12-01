@@ -1,16 +1,42 @@
 #include <iostream>
-#include <iostream>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <cstring>
+#include <fstream>
+#include "../include/util.hpp"
 #include "../include/constants.hpp"
 
 using namespace std;
 
-char *read_bills_file(char *buffer)
+void read_file(
+    string file_dir,
+    int (&prices)[MONTHS_COUNT][RESOURCES_COUNT])
 {
-    return buffer;
+    fstream fin;
+    string line;
+    vector<string> words;
+    int hour_0_column = 3;
+
+    fin.open(file_dir, ios::in);
+    if (!fin.is_open())
+    {
+        cout << "!! couldn't open the file (invalid building name)" << endl;
+        return;
+    }
+
+    getline(fin, line);
+    for (int i = 0; i < MONTHS_COUNT; i++)
+    {
+        getline(fin, line);
+        words = split_string(line.c_str(), ',');
+        for (int j = 0; j < RESOURCES_COUNT; j++)
+        {
+            prices[i][j] = atoi(words[2 + j].c_str());
+        }
+    }
+
+    fin.close();
 }
 
 int main(int argc, char *argv[])
@@ -20,15 +46,38 @@ int main(int argc, char *argv[])
         perror("!! Bad arguments for bills proc\n");
         exit(EXIT_FAILURE);
     }
+    string file_dir = argv[1];
 
-    cout << "BILLS PROGRAM RUNNING" << endl;
+    cout << "BILLS PROGRAM RUNNING " << file_dir << endl;
+    int prices[MONTHS_COUNT][RESOURCES_COUNT];
 
-    for (int i = 0; i < 9; i++)
+    read_file(file_dir, prices);
+
+    usleep(PIPE_WAIT_TIME);
+
+    cout << "**************************************" << endl;
+    string response_message = "";
+    for (int i = 0; i < MONTHS_COUNT; i++)
+    {
+        for (int j = 0; j < RESOURCES_COUNT; j++)
+        {
+            response_message = j ? response_message + " " : response_message;
+            response_message += to_string(prices[i][j]);
+            cout << prices[i][j] << " ";
+        }
+        response_message += ",";
+        cout << endl;
+    }
+    const char *response = response_message.c_str();
+    cout << response << endl;
+    cout << "**************************************" << endl;
+
+    while (true)
     {
         int pipe = open(BILLS_PIPE, O_RDONLY);
         if (pipe == -1)
         {
-            std::cerr << "Failed to open named pipe for reading requests" << std::endl;
+            cerr << "Failed to open named pipe for reading requests" << endl;
             return 1;
         }
 
@@ -40,20 +89,16 @@ int main(int argc, char *argv[])
 
         if (bytesRead > 0)
         {
-            std::cout << "Request received: " << buffer << std::endl;
-
-            std::string responseData = "Here is the information you requested";
+            cout << "Request received: " << buffer << endl;
 
             close(pipe);
 
             pipe = open(BILLS_PIPE, O_WRONLY);
             if (pipe == -1)
             {
-                std::cerr << "Failed to open named pipe for writing response" << std::endl;
+                cerr << "Failed to open named pipe for writing response" << endl;
                 return 1;
             }
-
-            char *response = read_bills_file(buffer);
             write(pipe, response, sizeof(response));
 
             close(pipe);

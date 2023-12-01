@@ -4,9 +4,9 @@
 #include <vector>
 #include <string>
 
-constexpr int BUFFER_CAPACITY = 512;
+constexpr int BUFFER_CAPACITY = 2048;
 constexpr char BILLS_PIPE[] = "BILLS_PIPE";
-// constexpr int PIPE_WAIT_TIME = 1000000;
+constexpr int PIPE_WAIT_TIME = 1000000;
 
 const std::string RESOURCES[3] = {"Gas", "Water", "Electricity"};
 const char RESOURCE_SIGNS[3] = {'G', 'W', 'E'};
