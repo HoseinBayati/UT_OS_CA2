@@ -41,21 +41,22 @@ void read_file(
 
 int main(int argc, char *argv[])
 {
-    if (argc != 2)
+    if (argc != 3)
     {
         perror("!! Bad arguments for bills proc\n");
         exit(EXIT_FAILURE);
     }
     string file_dir = argv[1];
+    int buildings_count = atoi(argv[2]);
 
-    cout << "BILLS PROGRAM RUNNING " << file_dir << endl;
+    // cout << "BILLS PROGRAM RUNNING " << file_dir << endl;
+
     int prices[MONTHS_COUNT][RESOURCES_COUNT];
 
     read_file(file_dir, prices);
 
     usleep(PIPE_WAIT_TIME);
 
-    cout << "**************************************" << endl;
     string response_message = "";
     for (int i = 0; i < MONTHS_COUNT; i++)
     {
@@ -63,16 +64,15 @@ int main(int argc, char *argv[])
         {
             response_message = j ? response_message + " " : response_message;
             response_message += to_string(prices[i][j]);
-            cout << prices[i][j] << " ";
         }
         response_message += ",";
-        cout << endl;
     }
-    const char *response = response_message.c_str();
-    cout << response << endl;
-    cout << "**************************************" << endl;
 
-    while (true)
+    const char *response = response_message.c_str();
+
+    // cout << response << endl;
+
+    for (int i = 0; i < buildings_count; i++)
     {
         int pipe = open(BILLS_PIPE, O_RDONLY);
         if (pipe == -1)
@@ -105,11 +105,11 @@ int main(int argc, char *argv[])
         }
         else
         {
-            usleep(1000);
+            usleep(PIPE_WAIT_TIME);
         }
     }
 
-    cout << "=====  out of bills while  =====" << endl;
+    // cout << "=====  out of bills while  =====" << endl;
 
     return 0;
 }

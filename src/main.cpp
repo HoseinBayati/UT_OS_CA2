@@ -138,10 +138,12 @@ void masterproc(
 
     if (bills_pid == 0)
     {
+        int buildings_count = target_buildings.size();
         execlp(
             "./bin/out/bills.out",
             "./bin/out/bills.out",
             (buildings_dir + "/" + BILLS_FILE).c_str(), // path to buildings directory
+            to_string(buildings_count).c_str(),
             NULL);
     }
     else

@@ -24,6 +24,16 @@ const std::string GAS_FILE = "Gas.csv";
 const std::string WATER_FILE = "Water.csv";
 const std::string ELECTRICITY_FILE = "Electricity.csv";
 
+const constexpr int GAS_COL = 1;
+const constexpr int WATER_COL = 0;
+const constexpr int ELECTRICITY_COL = 2;
+
+const constexpr int GAS_PENALTY = 1;
+const constexpr int WATER_PENALTY = 1.25;
+const constexpr int ELECTRICITY_PENALTY = 1.25;
+const constexpr int ELECTRICITY_REWARD = 0.75;
+
+
 constexpr int MONTHS_COUNT = 12;
 constexpr int HOURS_COUNT = 6;
 constexpr int DAYS_COUNT = 30;
