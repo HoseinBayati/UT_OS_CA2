@@ -270,19 +270,13 @@ void get_prices_from_bills_proc(
     usleep(PIPE_WAIT_TIME);
 
     char buffer[BUFFER_CAPACITY];
-    int bytesRead = read(pipe, buffer, sizeof(buffer));
+    int bytesRead = read(pipe, buffer, BUFFER_CAPACITY);
 
     if (bytesRead > 0)
     {
         vector<string> prices_list = split_string(buffer, ',');
 
-        cout << "Response received: ";
-        for (auto &price : prices_list)
-        {
-            cout << price << "    ";
-        }
-        cout << endl
-             << endl;
+        cout << "Response received: " << buffer << endl;
     }
     else
     {
@@ -305,8 +299,8 @@ int main(int argc, char *argv[])
     string building_dir = argv[3];
     string building_name = argv[4];
 
-    char buffer[50];
-    read(read_fd, buffer, sizeof(buffer));
+    char buffer[BUFFER_CAPACITY];
+    read(read_fd, buffer, BUFFER_CAPACITY);
 
     vector<string> target_resources = split_string(buffer, ' ');
 

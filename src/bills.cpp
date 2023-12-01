@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
         memset(buffer, 0, BUFFER_CAPACITY);
         int bytesRead = 0;
 
-        bytesRead = read(pipe, buffer, sizeof(buffer));
+        bytesRead = read(pipe, buffer, BUFFER_CAPACITY);
 
         if (bytesRead > 0)
         {
@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
                 cerr << "Failed to open named pipe for writing response" << endl;
                 return 1;
             }
-            write(pipe, response, sizeof(response));
+            write(pipe, response, BUFFER_CAPACITY);
 
             close(pipe);
         }

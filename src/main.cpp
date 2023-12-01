@@ -95,7 +95,7 @@ void handle_buildings_procs(
                 message_to_building.c_str(),
                 sizeof(message_to_building));
 
-            char buffer[50];
+            char buffer[BUFFER_CAPACITY];
             waitpid(building_pid, NULL, 0); ////////////////////
             read(
                 pipefd_building_to_parent[0],
