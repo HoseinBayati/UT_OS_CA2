@@ -1,11 +1,20 @@
 #include <iostream>
-// #include <sys/stat.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <fstream>
 #include "../include/util.hpp"
 #include "../include/constants.hpp"
 
 using namespace std;
+
+void print_building_header(string building_name)
+{
+    cout << endl
+         << "==============================================" << endl
+         << "Information for building: " << building_name << endl;
+}
 
 void calc_sum_for_each_month(
     int (&consumption_info)[MONTHS_COUNT][DAYS_COUNT][HOURS_COUNT],
@@ -69,6 +78,47 @@ void calc_bill_for_each_month(
     int (&consumption_info)[MONTHS_COUNT][DAYS_COUNT][HOURS_COUNT],
     int (&result)[MONTHS_COUNT])
 {
+    int pipe = open(BILLS_PIPE, O_WRONLY);
+    if (pipe == -1)
+    {
+        std::cerr << "Failed to open named pipe for writing" << std::endl;
+        return;
+    }
+
+    // Message to send (request)
+    std::string requestMessage = "Requesting information";
+
+    // Write the request to the named pipe
+    write(pipe, requestMessage.c_str(), sizeof(requestMessage.c_str()));
+
+    // Close the pipe
+    close(pipe);
+
+    // Open the named pipe for reading the response
+    pipe = open(BILLS_PIPE, O_RDONLY);
+    if (pipe == -1)
+    {
+        std::cerr << "Failed to open named pipe for reading response" << std::endl;
+        return;
+    }
+
+    // Read the response
+    char buffer[256];
+    int bytesRead = read(pipe, buffer, sizeof(buffer));
+
+    if (bytesRead > 0)
+    {
+        std::cout << "Response received: " << buffer << std::endl;
+    }
+    else
+    {
+        std::cerr << "Failed to read response from named pipe" << std::endl;
+    }
+
+    // Close the pipe
+    close(pipe);
+
+    return;
 }
 
 int calc_mean_peak_difference(
@@ -105,8 +155,6 @@ void read_file(
     vector<string> words;
     int hour_0_column = 3;
 
-    // cout << "read from: " << file_dir << endl;
-
     fin.open(file_dir, ios::in);
     if (!fin.is_open())
     {
@@ -129,6 +177,41 @@ void read_file(
     }
 
     fin.close();
+}
+
+void print_building_results(
+    string resource_name,
+    int sum_for_each_month[MONTHS_COUNT],
+    int peak_hours[MONTHS_COUNT],
+    int bill_for_each_month[MONTHS_COUNT],
+    int mean_in_month,
+    int peak_mean_difference)
+{
+    cout << "Resource:  " << resource_name << endl
+         << "Total consumption for each month: ";
+    for (int i = 0; i < MONTHS_COUNT; i++)
+    {
+        cout << sum_for_each_month[i] << " ";
+    }
+    // cout << endl
+    //      << "bill_for_each_month: ";
+    // for (int i = 0; i < MONTHS_COUNT; i++)
+    // {
+    //     cout << bill_for_each_month[i] << " ";
+    // }
+    // cout << endl;
+    cout << endl
+         << "Mean consumption in month: " << mean_in_month;
+
+    cout << endl
+         << "Peak hour in each month: ";
+    for (int i = 0; i < MONTHS_COUNT; i++)
+    {
+        cout << peak_hours[i] << " ";
+    }
+    cout << endl
+         << "The difference between a peak hour and mean: " << peak_mean_difference << endl
+         << "--------------------------------------" << endl;
 }
 
 void show_resource_info(string resource_name, int (&consumption_info)[MONTHS_COUNT][DAYS_COUNT][HOURS_COUNT])
@@ -158,38 +241,20 @@ void show_resource_info(string resource_name, int (&consumption_info)[MONTHS_COU
         peak_hours,
         sum_for_each_month);
 
-    cout << "Resource:  " << resource_name << endl
-         << "Total consumption for each month: ";
-    for (int i = 0; i < MONTHS_COUNT; i++)
-    {
-        cout << sum_for_each_month[i] << " ";
-    }
-    // cout << endl
-    //      << "bill_for_each_month: ";
-    // for (int i = 0; i < MONTHS_COUNT; i++)
-    // {
-    //     cout << bill_for_each_month[i] << " ";
-    // }
-    // cout << endl;
-    cout << endl
-         << "Mean consumption in month: " << mean_in_month;
-
-    cout << endl
-         << "Peak hour in each month: ";
-    for (int i = 0; i < MONTHS_COUNT; i++)
-    {
-        cout << peak_hours[i] << " ";
-    }
-    cout << endl
-         << "The difference between a peak hour and mean: " << peak_mean_difference << endl
-         << "--------------------------------------" << endl;
+    print_building_results(
+        resource_name,
+        sum_for_each_month,
+        peak_hours,
+        bill_for_each_month,
+        mean_in_month,
+        peak_mean_difference);
 }
 
 int main(int argc, char *argv[])
 {
     if (argc != 5)
     {
-        perror("!! didn't receive the port fd's\n");
+        perror("!! Bad arguments for building proc\n");
         exit(EXIT_FAILURE);
     }
 
@@ -203,15 +268,10 @@ int main(int argc, char *argv[])
 
     vector<string> target_resources = split_string(buffer, ' ');
 
-    // cout << "Building received: " << building_dir << endl;
-
     int g_consumption[MONTHS_COUNT][DAYS_COUNT][HOURS_COUNT];
     int w_consumption[MONTHS_COUNT][DAYS_COUNT][HOURS_COUNT];
     int e_consumption[MONTHS_COUNT][DAYS_COUNT][HOURS_COUNT];
-
-    cout << endl
-         << "==============================================" << endl
-         << "Information for building: " << building_name << endl;
+    print_building_header(building_name);
     for (auto &resource_key : target_resources)
     {
         if (resource_key == "G")

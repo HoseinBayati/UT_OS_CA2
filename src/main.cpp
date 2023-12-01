@@ -48,17 +48,16 @@ void exec_building(
     close(pipefd_building_to_parent[1]);
 }
 
-void masterproc(
+void handle_buildings_procs(
     vector<string> target_resources,
     vector<string> target_buildings,
     string buildings_dir)
 {
-    int i = 0;
     for (string target_building : target_buildings)
     {
         int pipefd_parent_to_building[2];
         int pipefd_building_to_parent[2];
-        pid_t pid;
+        pid_t building_pid;
 
         if (pipe(pipefd_parent_to_building) == -1 || pipe(pipefd_building_to_parent) == -1)
         {
@@ -66,17 +65,16 @@ void masterproc(
             return;
         }
 
-        pid = fork();
+        building_pid = fork();
 
-        if (pid < 0)
+        if (building_pid < 0)
         {
-            std::cerr << "Fork failed." << std::endl;
+            std::cerr << "!! Building fork failed." << std::endl;
             return;
         }
 
-        if (pid == 0)
+        if (building_pid == 0)
         {
-            // Child process
             exec_building(
                 pipefd_parent_to_building,
                 pipefd_building_to_parent,
@@ -87,7 +85,6 @@ void masterproc(
         }
         else
         {
-            // Parent process
             close(pipefd_parent_to_building[0]);
             close(pipefd_building_to_parent[1]);
 
@@ -109,9 +106,48 @@ void masterproc(
             close(pipefd_parent_to_building[1]);
             close(pipefd_building_to_parent[0]);
         }
-
-        i++;
     }
+}
+
+void masterproc(
+    vector<string> target_resources,
+    vector<string> target_buildings,
+    string buildings_dir)
+{
+    pid_t bills_pid;
+
+    unlink(BILLS_PIPE);
+    if (mkfifo(BILLS_PIPE, S_IRWXU | 0666) == -1)
+    {
+        perror("!! Failed to make Bills named pipe.");
+        return;
+    }
+
+    bills_pid = fork();
+
+    if (bills_pid < 0)
+    {
+        std::cerr << "!! Bills fork failed." << std::endl;
+        return;
+    }
+
+    if (bills_pid == 0)
+    {
+        execlp(
+            "./bin/out/bills.out",
+            "./bin/out/bills.out",
+            (buildings_dir + "/").c_str(), // path to buildings directory
+            NULL);
+    }
+    else
+    {
+        handle_buildings_procs(
+            target_resources,
+            target_buildings,
+            buildings_dir);
+    }
+
+    unlink(BILLS_PIPE);
 }
 
 int main(int argc, char *argv[])

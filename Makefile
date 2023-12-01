@@ -39,7 +39,7 @@ $(PATH_OBJ)/util.o: $(PATH_SRC)/util.cpp $(PATH_INCLUDE)/util.hpp
 $(PATH_OUT)/$(BUILDING): $(PATH_SRC)/building.cpp $(PATH_INCLUDE)/util.hpp $(PATH_OBJ)/util.o $(PATH_INCLUDE)/constants.hpp
 	$(CC) $(PATH_SRC)/building.cpp $(PATH_OBJ)/util.o -o $@
 
-$(PATH_OUT)/$(BILLS): $(PATH_SRC)/bills.cpp $(PATH_OBJ)/util.o
+$(PATH_OUT)/$(BILLS): $(PATH_SRC)/bills.cpp $(PATH_INCLUDE)/util.hpp $(PATH_OBJ)/util.o $(PATH_INCLUDE)/constants.hpp
 	$(CC) $(PATH_SRC)/bills.cpp $(PATH_OBJ)/util.o -o $@
 
 $(PATH_OUT)/$(RESOURCE): $(PATH_SRC)/resource.cpp $(PATH_OBJ)/util.o
